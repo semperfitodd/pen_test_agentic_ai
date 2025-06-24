@@ -1,0 +1,123 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.frontEnd.namespace }}
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.frontEnd.name }}-s3-pv
+  namespace: {{ .Values.frontEnd.namespace }}
+spec:
+  capacity:
+    storage: {{ .Values.global.s3.storage.size }}
+  volumeMode: Filesystem
+  accessModes:
+{{ toYaml .Values.global.s3.storage.accessModes | indent 4 }}
+  persistentVolumeReclaimPolicy: {{ .Values.global.s3.storage.reclaimPolicy }}
+  storageClassName: {{ .Values.global.s3.storage.storageClassName }}
+  csi:
+    driver: s3.csi.aws.com
+    volumeHandle: s3-csi-{{ .Values.frontEnd.name }}
+    volumeAttributes:
+      bucketName: {{ .Values.global.s3.bucketName }}
+      mounter: s3fs
+      authType: "pod"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.frontEnd.name }}-s3-pvc
+  namespace: {{ .Values.frontEnd.namespace }}
+spec:
+  accessModes:
+{{ toYaml .Values.global.s3.storage.accessModes | indent 4 }}
+  resources:
+    requests:
+      storage: {{ .Values.global.s3.storage.size }}
+  storageClassName: {{ .Values.global.s3.storage.storageClassName }}
+  volumeName: {{ .Values.frontEnd.name }}-s3-pv
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.frontEnd.name }}-deployment
+  namespace: {{ .Values.frontEnd.namespace }}
+  labels:
+    app: {{ .Values.frontEnd.name }}
+spec:
+  replicas: {{ .Values.frontEnd.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.frontEnd.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.frontEnd.name }}
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: {{ .Values.frontEnd.name }}
+          image: {{ .Values.frontEnd.image.repository }}:{{ .Values.frontEnd.image.tag }}
+          volumeMounts:
+            - name: s3-volume
+              mountPath: /mount
+          resources:
+            requests:
+              cpu: "{{ .Values.frontEnd.resources.requests.cpu }}"
+              memory: "{{ .Values.frontEnd.resources.requests.memory }}"
+            limits:
+              cpu: "{{ .Values.frontEnd.resources.limits.cpu }}"
+              memory: "{{ .Values.frontEnd.resources.limits.memory }}"
+      volumes:
+        - name: s3-volume
+          persistentVolumeClaim:
+            claimName: {{ .Values.frontEnd.name }}-s3-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ .Values.frontEnd.name }}
+  name: {{ .Values.frontEnd.name }}-svc
+  namespace: {{ .Values.frontEnd.namespace }}
+spec:
+  ports:
+  - port: {{ .Values.frontEnd.service.port }}
+    protocol: TCP
+    targetPort: {{ .Values.frontEnd.service.targetPort }}
+  selector:
+    app: {{ .Values.frontEnd.name }}
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.frontEnd.name }}-ingress
+  namespace: {{ .Values.frontEnd.namespace }}
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/ip-address-type: ipv4
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=false
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.global.ingress.frontend.host }}
+spec:
+  rules:
+    - host: {{ .Values.global.ingress.frontend.host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.frontEnd.name }}-svc
+                port:
+                  number: 80

@@ -7,6 +7,30 @@ global:
         - ReadWriteMany
       reclaimPolicy: Retain
       storageClassName: s3-sc
+  ingress:
+    frontend:
+      host: pen-test-ai.brewsentry.com
+
+frontEnd:
+  name: frontend
+  namespace: frontend
+  replicas: 1
+  image:
+    repository: 704855531002.dkr.ecr.us-east-1.amazonaws.com/pen_test_ai/front_end
+    tag: "20250624123512"
+    pullPolicy: IfNotPresent
+
+  service:
+    port: 80
+    targetPort: 80
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
 
 ubuntuWorker:
   name: ubuntu-worker
@@ -23,6 +47,3 @@ ubuntuWorker:
     limits:
       cpu: "200m"
       memory: "256Mi"
-
-  nodeSelector:
-    gpu: 'false'

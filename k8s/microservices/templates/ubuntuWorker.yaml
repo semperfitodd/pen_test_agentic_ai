@@ -61,5 +61,3 @@ spec:
     - name: s3-volume
       persistentVolumeClaim:
         claimName: {{ .Values.ubuntuWorker.name }}-s3-pvc
-  nodeSelector:
-    gpu: {{ .Values.ubuntuWorker.nodeSelector.gpu | quote }}
