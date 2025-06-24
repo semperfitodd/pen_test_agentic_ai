@@ -1,0 +1,9 @@
+appEnvironments:
+  dev:
+    argoHostname: argocd-pen-test-ai.brewsentry.com
+    awsAccountNumber: '704855531002'
+    clusterName: pen-test-ai
+    environment: pen-test-ai
+    publicDomain: brewsentry.com
+    publicDomainId: Z02805682TXYB0368277R
+    repoUrl: https://github.com/semperfitodd/pen_test_agentic_ai.git

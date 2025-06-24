@@ -1,0 +1,28 @@
+global:
+  s3:
+    bucketName: pen-test-ai-eks-vvsp70
+    storage:
+      size: 100Gi
+      accessModes:
+        - ReadWriteMany
+      reclaimPolicy: Retain
+      storageClassName: s3-sc
+
+ubuntuWorker:
+  name: ubuntu-worker
+  namespace: default
+  image:
+    repository: ubuntu
+    tag: "24.10"
+    pullPolicy: IfNotPresent
+
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+
+  nodeSelector:
+    gpu: 'false'
