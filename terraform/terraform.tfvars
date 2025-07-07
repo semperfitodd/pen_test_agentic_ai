@@ -1,9 +1,10 @@
 domain = "brewsentry.com"
 
 ecr_repos = {
+  api       = "api"
   front_end = "front_end"
   processor = "processor"
-  scanner = "scanner"
+  scanner   = "scanner"
 }
 
 eks_cluster_version = "1.33"

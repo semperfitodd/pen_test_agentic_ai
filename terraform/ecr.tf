@@ -39,7 +39,10 @@ resource "null_resource" "build_and_push_image" {
   for_each = var.ecr_repos
 
   triggers = {
-    dockerfile_hash = filesha256("../docker/${each.key}/Dockerfile")
+    content_hash = join(",", [
+      for file in fileset("../docker/${each.key}", "**/*.{css,js,Dockerfile,go,html,ico,json}") :
+      filesha256("../docker/${each.key}/${file}")
+    ])
   }
 
   provisioner "local-exec" {
