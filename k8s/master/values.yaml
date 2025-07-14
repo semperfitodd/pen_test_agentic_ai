@@ -1,3 +1,23 @@
+devops:
+  sourceRepos:
+    - https://argoproj.github.io/argo-helm
+    - https://aws.github.io/eks-charts
+    - https://charts.bitnami.com/bitnami
+    - oci://registry-1.docker.io/bitnamicharts
+    - https://charts.jetstack.io/
+    - https://nvidia.github.io/k8s-device-plugin
+    - https://aws.github.io/secrets-store-csi-driver-provider-aws
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 2
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m0s
+
 appEnvironments:
   dev:
     argoHostname: argocd-pen-test-ai.brewsentry.com
